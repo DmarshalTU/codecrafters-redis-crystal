@@ -4,7 +4,19 @@ require "./message_parser"
 # Ensure that the program terminates on SIGTERM, https://github.com/crystal-lang/crystal/issues/8687
 Signal::TERM.trap { exit }
 
+class State
+  # Define an instance variable
+  @store : Hash(String, String) = {} of String => String
+
+  # Provide a getter method to access the store outside of the class
+  getter store : Hash(String, String)
+end
+
+
 class Server
+  def initialize
+    @server_state = State.new
+  end
   def start
     puts("LOGS: Server started")
 
@@ -38,8 +50,9 @@ class Server
 
         if command_buffer.size == expected_lines
           # We have a complete command
-          response = message_parser(command_buffer)
+          response = message_parser(command_buffer, @server_state)
           puts "Sending response: #{response}" if response
+          puts "!!!!!!!>>>>>> #{response + "\r\n" unless response.nil?}"
           client << response + "\r\n" unless response.nil?
           command_buffer.clear
           expected_lines = 0
