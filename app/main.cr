@@ -10,14 +10,23 @@ class YourRedisServer
     server = TCPServer.new("0.0.0.0", 6379, reuse_port: true)
     loop do
       client = server.accept?
-      client && spawn handle_client(client)
+      client && spawn do
+        handle_client(client)
+      end
     end
   end
 
   def handle_client(client)
-    while mmessage = client.gets
-      if mmessage == "ping"
-        client.puts "+PONG\r\n"
+    loop do
+      begin
+        message = client.read_line
+      rescue ex : IO::EOFError
+        client.close
+        break
+      end
+
+      if message =~ /ping/
+        client << "+PONG\r\n"
       end
     end
   end
