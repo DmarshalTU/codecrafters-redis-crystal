@@ -5,12 +5,21 @@ Signal::TERM.trap { exit }
 
 class YourRedisServer
   def start
-    # You can use print statements as follows for debugging, they'll be visible when running tests.
     puts("Logs from your program will appear here!")
 
     server = TCPServer.new("0.0.0.0", 6379, reuse_port: true)
-    return if (client = server.accept?).nil?
-    client << "+PONG\r\n"
+    loop do
+      client = server.accept?
+      client && spawn handle_client(client)
+    end
+  end
+
+  def handle_client(client)
+    while mmessage = client.gets
+      if mmessage == "ping"
+        client.puts "+PONG\r\n"
+      end
+    end
   end
 end
 
